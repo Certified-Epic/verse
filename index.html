@@ -1,16 +1,78 @@
-<!DOCTYPE html>
+<!-- HTML -->
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Completionist Graph</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ultimate Achievement Star Chart</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Ultimate Completionist Graph</h1>
-    <div id="network"></div>
-    <script src="script.js"></script>
+  <!-- Full-screen star-chart container -->
+  <div id="starfield">
+    <!-- The single SVG canvas for crisp scalable drawing -->
+    <svg id="chart" viewBox="0 0 2000 1200" preserveAspectRatio="xMidYMid meet" aria-label="Achievement star chart">
+      <defs>
+        <!-- glow filter for nodes & paths -->
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <!-- checkmark path used for completed nodes -->
+        <symbol id="check" viewBox="0 0 24 24">
+          <path d="M20.285 6.709l-11.02 11.02-5.55-5.55 1.414-1.414 4.136 4.137 9.606-9.606z"></path>
+        </symbol>
+      </defs>
+
+      <!-- SVG groups will be populated by JS -->
+      <g id="paths"></g>
+      <g id="nodes"></g>
+    </svg>
+
+    <!-- Tooltip shown on hover -->
+    <div id="tooltip" role="tooltip" aria-hidden="true"></div>
+
+    <!-- Hidden audio elements (placeholder src) -->
+    <audio id="ambient" loop src="assets/ambient.mp3" preload="auto"></audio>
+    <audio id="hoverSound" src="assets/hover.wav" preload="auto"></audio>
+    <audio id="unlockSound" src="assets/unlock.wav" preload="auto"></audio>
+  </div>
+
+  <!-- Inline data + script (all logic in JS block below) -->
+  <script>
+  /* ACHIEVEMENT DATA
+     Each node:
+       id: unique id
+       name, description
+       x,y: coordinates inside viewBox (0..2000, 0..1200)
+       status: "locked" | "unlocked" | "completed"
+       connects: array of node ids this node points to (directional)
+  */
+  const ACHIEVEMENTS = [
+    // Five core starting "planets" (unlocked)
+    { id: 'creative', name: 'Creative', description: 'Core: Creativity & art.', x: 300,  y: 250,  status: 'unlocked', connects: ['comic', 'portfolio'] },
+    { id: 'physical', name: 'Physical', description: 'Core: Fitness & movement.',    x: 1000, y: 220,  status: 'unlocked', connects: ['strength', 'endurance'] },
+    { id: 'social',    name: 'Social',    description: 'Core: Relationships & community.', x: 1700, y: 270, status: 'unlocked', connects: ['network', 'projects'] },
+    { id: 'mental',    name: 'Mental',    description: 'Core: Knowledge & study.',     x: 600,  y: 900,  status: 'unlocked', connects: ['anki', 'courses'] },
+    { id: 'career',    name: 'Career',    description: 'Core: Skills & projects.',     x: 1400, y: 900,  status: 'unlocked', connects: ['portfolio', 'open_source'] },
+
+    // Second tier
+    { id: 'comic',      name: 'Make a Comic',            description: 'Finish a short comic.', x: 180,  y: 420,  status: 'locked', connects: [] },
+    { id: 'portfolio',  name: 'Build Portfolio',         description: 'Publish your portfolio.', x: 430,  y: 120,  status: 'locked', connects: ['open_source'] },
+    { id: 'strength',   name: 'Strength Milestone',      description: 'Add X kg to lift.', x: 900,  y: 420,  status: 'locked', connects: [] },
+    { id: 'endurance',  name: 'Run 5K',                 description: 'Run a consistent 5K.', x: 1200, y: 420,  status: 'locked', connects: [] },
+    { id: 'network',    name: 'Host Meet-up',           description: 'Host a small meetup/event.', x: 1550, y: 460,  status: 'locked', connects: [] },
+    { id: 'projects',   name: 'Group Project',         description: 'Complete a collab.', x: 1820, y: 420,  status: 'locked', connects: [] },
+    { id: 'anki',       name: 'Anki Mastery',          description: 'Maintain streak for 30 days.', x: 320,  y: 760,  status: 'locked', connects: [] },
+    { id: 'courses',    name: 'Complete Course',       description: 'Finish an online course.', x: 880,  y: 760,  status: 'locked', connects: [] },
+    { id: 'open_source',name: 'Open Source PR',        description: 'Ship a PR to an OSS repo.', x: 1530, y: 760,  status: 'locked', connects: [] }
+  ];
+  </script>
+
+  <script src="app.js"></script>
 </body>
 </html>
