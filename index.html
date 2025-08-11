@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ultimate Life Achievement Star Chart</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="ui">
+  <button id="muteBtn" aria-label="Mute/unmute">🔊</button>
+  <button id="downloadBtn">Download ZIP</button>
+</div>
+
+<div id="stage">
+  <div id="stars"></div>
+
+  <!-- central globe -->
+  <div id="globe-wrap">
+    <svg id="globe" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <circle cx="0" cy="0" r="48" fill="none" stroke="#fff" stroke-width="1.8" />
+      <g id="rings"></g>
+    </svg>
+  </div>
+
+  <!-- platform image under planets -->
+  <img id="platform" src="https://files.catbox.moe/8jbsbu.png" alt="platform">
+
+  <!-- container for planets -->
+  <div id="planets"></div>
+
+  <!-- zoom overlay -->
+  <div id="zoomOverlay" aria-hidden="true">
+    <button id="closeZoom" aria-label="Close">✕</button>
+    <div id="zoomContent">
+      <h2 id="planetTitle"></h2>
+      <div id="achievementsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<audio id="music" loop crossorigin="anonymous">
+  <source src="https://files.catbox.moe/ej4uff.mp3" type="audio/mpeg">
+</audio>
+<audio id="hoverSound" crossorigin="anonymous">
+  <source src="https://files.catbox.moe/kftxci.mp3" type="audio/mpeg">
+</audio>
+<audio id="clickSound" crossorigin="anonymous">
+  <source src="https://files.catbox.moe/qza6ii.mp3" type="audio/mpeg">
+</audio>
+
+<script src="app.js"></script>
+</body>
+</html>
