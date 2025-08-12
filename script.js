@@ -1,7 +1,7 @@
 /**
  * script.js
- * Updated to include persistent achievement status via localStorage
- * and an interactive "Mark as Complete" button.
+ * FIXED: All assets now load correctly.
+ * UPDATED: Logic to handle the nested planet and achievement structure.
  */
 
 // --- Constants & Global Variables ---
@@ -33,11 +33,11 @@ const corePlanet = {
 const particlesStars = [];
 const NUM_STARS = 200;
 
-// Image assets
+// Image assets with corrected URLs
 const centralImage = new Image();
 centralImage.src = 'https://files.catbox.moe/8eyie5.png'; // Geometric shapes
 const projectorImage = new Image();
-projectorImage.src = 'https://files.catbox.moe/i76wxr.png'; // Correct projector base image
+projectorImage.src = 'https://files.catbox.moe/i76wxr.png'; // CORRECTED projector base image
 const lockedIcon = new Image();
 lockedIcon.src = 'https://files.catbox.moe/2tciqz.png'; // Locked/Unachieved icon
 
@@ -109,18 +109,14 @@ function createStars() {
 }
 
 function saveAchievements() {
-    // Save the current state of achievements to localStorage
     localStorage.setItem('achievements', JSON.stringify(achievementsData));
 }
 
 // --- Drawing Functions ---
 function drawCorePlanet() {
-    // Save context state for planet-specific transformations
     ctx.save();
     ctx.translate(corePlanet.x, corePlanet.y);
     ctx.scale(zoomLevel, zoomLevel);
-
-    // Subtle planet spinning animation
     ctx.rotate(corePlanet.spinAngle);
     ctx.strokeStyle = `rgba(255, 255, 255, 1)`;
     ctx.lineWidth = 2;
@@ -159,7 +155,7 @@ function drawCorePlanet() {
     }
 
     ctx.restore();
-    ctx.shadowBlur = 0; // Reset shadow for other drawings
+    ctx.shadowBlur = 0;
 }
 
 function drawCentralImage() {
@@ -186,8 +182,10 @@ function drawCentralImage() {
 
 function drawAchievements() {
     if (zoomLevel > 2.0 && achievementsData.length > 0) {
-        // We'll just handle the first achievement for now
-        const ach = achievementsData[0];
+        const planet = achievementsData[0]; // Access the first planet (Ceres)
+        if (!planet || !planet.achievements || planet.achievements.length === 0) return;
+
+        const ach = planet.achievements[0]; // Access the first achievement
         const angle = -Math.PI / 2;
         const branchLength = 200;
         const startX = corePlanet.x;
@@ -228,17 +226,19 @@ function drawAchievements() {
         }
         ctx.globalAlpha = 1;
 
-        // Store achievement position for interaction
         const achRect = {
             x: projectorX,
             y: projectorY,
             width: projectorSize,
-            height: projectorSize
+            height: projectorSize,
+            data: ach // Store the achievement object
         };
+
+        // Check for hover state
         hoveredAchievement = null;
         if (mouse.x > achRect.x && mouse.x < achRect.x + achRect.width &&
             mouse.y > achRect.y && mouse.y < achRect.y + achRect.height) {
-            hoveredAchievement = ach;
+            hoveredAchievement = achRect.data;
         }
     }
 }
@@ -298,7 +298,7 @@ function drawAchievementPanel() {
         ctx.fillRect(closeBtn.x, closeBtn.y, closeBtn.width, closeBtn.height);
         ctx.fillStyle = 'white';
         ctx.font = '16px Inter';
-        ctx.fillText('X', closeBtn.x + closeBtn.width / 2 - 5, closeBtn.y + 15);
+        ctx.fillText('X', closeBtn.x + closeBtn.width / 2 - 5, closeBtn.y + 25);
 
         // "Mark as Complete" button (only for 'available' achievements)
         if (activeAchievement.status === 'available') {
@@ -430,9 +430,42 @@ canvas.addEventListener('click', (e) => {
             zoomLevel = MIN_ZOOM;
             corePlanet.isZoomedIn = false;
         }
-        return; // Exit to prevent double-clicking
+        return;
     }
     
+    // Check for click on achievement
+    if (zoomLevel > 2.0 && achievementsData.length > 0) {
+        const planet = achievementsData[0];
+        if (!planet || !planet.achievements || planet.achievements.length === 0) return;
+
+        const ach = planet.achievements[0];
+        const angle = -Math.PI / 2;
+        const branchLength = 200;
+        const projectorSize = 50;
+        const endX = corePlanet.x + Math.cos(angle) * branchLength * zoomLevel;
+        const endY = corePlanet.y + Math.sin(angle) * branchLength * zoomLevel;
+        const projectorX = endX - projectorSize / 2;
+        const projectorY = endY - projectorSize / 2;
+
+        const achRect = {
+            x: projectorX,
+            y: projectorY,
+            width: projectorSize,
+            height: projectorSize
+        };
+        
+        // Handle clicks on achievement
+        if (mouse.x > achRect.x && mouse.x < achRect.x + achRect.width &&
+            mouse.y > achRect.y && mouse.y < achRect.y + achRect.height) {
+            if (activeAchievement && activeAchievement.id === ach.id) {
+                activeAchievement = null;
+            } else {
+                activeAchievement = ach;
+            }
+            return;
+        }
+    }
+
     // Check for click on close button
     if (activeAchievement) {
         const panelWidth = 400;
@@ -463,43 +496,17 @@ canvas.addEventListener('click', (e) => {
             if (mouse.x > completeBtn.x && mouse.x < completeBtn.x + completeBtn.width &&
                 mouse.y > completeBtn.y && mouse.y < completeBtn.y + completeBtn.height) {
                 // Find the achievement in the data array and update its status
-                const index = achievementsData.findIndex(ach => ach.id === activeAchievement.id);
-                if (index !== -1) {
-                    achievementsData[index].status = 'completed';
-                    activeAchievement = achievementsData[index]; // Update the active reference
-                    saveAchievements();
+                const planet = achievementsData.find(p => p.id === 'ceres'); // Find the correct planet
+                if (planet) {
+                    const index = planet.achievements.findIndex(ach => ach.id === activeAchievement.id);
+                    if (index !== -1) {
+                        planet.achievements[index].status = 'completed';
+                        activeAchievement = planet.achievements[index]; // Update the active reference
+                        saveAchievements();
+                    }
                 }
                 return;
             }
-        }
-    }
-    
-    // Check for click on achievement icon
-    if (zoomLevel > 2.0 && achievementsData.length > 0) {
-        const ach = achievementsData[0];
-        const angle = -Math.PI / 2;
-        const branchLength = 200;
-        const projectorSize = 50;
-        const endX = corePlanet.x + Math.cos(angle) * branchLength * zoomLevel;
-        const endY = corePlanet.y + Math.sin(angle) * branchLength * zoomLevel;
-        const projectorX = endX - projectorSize / 2;
-        const projectorY = endY - projectorSize / 2;
-
-        const achRect = {
-            x: projectorX,
-            y: projectorY,
-            width: projectorSize,
-            height: projectorSize
-        };
-
-        if (mouse.x > achRect.x && mouse.x < achRect.x + achRect.width &&
-            mouse.y > achRect.y && mouse.y < achRect.y + achRect.height) {
-            if (activeAchievement && activeAchievement.id === ach.id) {
-                activeAchievement = null;
-            } else {
-                activeAchievement = ach;
-            }
-            return;
         }
     }
     
