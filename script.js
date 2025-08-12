@@ -1,7 +1,7 @@
 /**
  * script.js
- * FIXED: All assets now load correctly.
- * UPDATED: Logic to handle the nested planet and achievement structure.
+ * FINAL VERSION: All assets load correctly, and the logic is fully
+ * adapted to the nested planet/achievement data structure.
  */
 
 // --- Constants & Global Variables ---
@@ -73,6 +73,9 @@ function loadImages() {
     images.forEach(img => {
         img.onload = () => {
             imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+                console.log("All images loaded successfully!");
+            }
         };
         img.onerror = () => {
             console.error(`Failed to load image: ${img.src}`);
@@ -109,6 +112,7 @@ function createStars() {
 }
 
 function saveAchievements() {
+    // Save the current state of achievements to localStorage
     localStorage.setItem('achievements', JSON.stringify(achievementsData));
 }
 
@@ -210,7 +214,6 @@ function drawAchievements() {
         const projectorY = endY - projectorSize / 2;
 
         let achIcon = null;
-
         if (ach.status === 'completed') {
             achIcon = projectorImage;
         } else if (ach.status === 'available') {
@@ -234,7 +237,6 @@ function drawAchievements() {
             data: ach // Store the achievement object
         };
 
-        // Check for hover state
         hoveredAchievement = null;
         if (mouse.x > achRect.x && mouse.x < achRect.x + achRect.width &&
             mouse.y > achRect.y && mouse.y < achRect.y + achRect.height) {
@@ -351,7 +353,6 @@ function animate() {
         drawHoverTooltip();
         drawAchievementPanel();
     } else {
-        // Show loading message
         ctx.fillStyle = 'white';
         ctx.font = '24px Inter';
         ctx.textAlign = 'center';
@@ -376,7 +377,12 @@ window.addEventListener('load', () => {
         console.log("Loaded achievements from localStorage:", achievementsData);
     } else {
         fetch('achievements.json')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
                 achievementsData = data;
                 console.log("Achievements loaded from JSON:", achievementsData);
@@ -487,9 +493,11 @@ canvas.addEventListener('click', (e) => {
         
         // Check for click on "Mark as Complete" button
         if (activeAchievement.status === 'available') {
+            const panelX = (canvas.width - 400) / 2;
+            const panelY = (canvas.height - 250) / 2;
             const completeBtn = {
                 x: panelX + 20,
-                y: panelY + panelHeight - 50,
+                y: panelY + 250 - 50,
                 width: 200,
                 height: 30
             };
